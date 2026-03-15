@@ -29,8 +29,6 @@ def generate_rss():
     fg.language('ko')
     
     # 채용공고 목록 추출 
-    # (주의: 실제 웹사이트의 HTML 구조를 보고 'table tbody tr' 또는 'ul.job_list li' 등으로 변경해야 할 수 있습니다)
-    # 아래는 리스트형/테이블형을 모두 포괄할 수 있도록 포괄적인 a 태그를 탐색하는 방식입니다.
     job_links = soup.select('a') 
     
     added_links = set() # 중복 방지용
@@ -44,35 +42,31 @@ def generate_rss():
         if len(title) < 5:
             continue
             
-        # 채용 공고 상세페이지로 이동하는 링크 패턴 찾기
-        # 주로 javascript 함수로 이동하거나 특정 쿼리스트링이 포함됨
         link = ""
         
+        # 자바스크립트 함수로 이동하거나 특정 쿼리스트링이 포함된 경우 링크 파싱
         if 'javascript:' in href or onclick:
-            # 예: fn_view('2024001') 같은 자바스크립트 함수에서 ID값 추출
             target_str = href if 'javascript:' in href else onclick
             match = re.search(r"'(.*?)'", target_str)
             if match:
                 post_id = match.group(1)
-                # 실제 상세페이지 URL 구조에 맞게 조합 (예시)
                 link = f"https://job.cleaneye.go.kr/user/ypRecruitmentDetail.do?recrutPbancSn={post_id}"
         elif '/user/ypRecruitmentDetail' in href or 'Sn=' in href:
             link = urljoin("https://job.cleaneye.go.kr", href)
             
-        # 공고 링크로 추정되고, 아직 추가하지 않은 항목이면 RSS에 추가
-        if link and link not 세 added_links:
+        # 오타 수정됨: 'not 세' -> 'not in'
+        if link and link not in added_links:
             added_links.add(link)
             
             fe = fg.add_entry()
             fe.title(title)
             fe.link(href=link)
-            # 본문에 제목을 한 번 더 노출 (필요 시 기관명 파싱 로직 추가 가능)
             fe.description(f"새로운 채용 공고가 등록되었습니다: {title}")
             fe.guid(link)
             
     # RSS 파일을 xml 포맷으로 저장
     fg.rss_file('rss.xml')
-    print("rss.xml 파일이 성공적으로 생성되었습니다. (총 {}건)".format(len(added_links)))
+    print(f"rss.xml 파일이 성공적으로 생성되었습니다. (총 {len(added_links)}건)")
 
 if __name__ == "__main__":
     generate_rss()
